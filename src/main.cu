@@ -30,7 +30,7 @@ int main(){
     //copy_to_constant_gpu_memory(player2.hostcode,codetocrack1,0);
     
     //copy_to_constant_gpu_memory(player1.hostcode,codetocrack2,0);
-    runtestkernel(player1.hostcode);
+    runtestkernel(player1.hostcode,player2.hostcode);
     // We then need to perform a simple operation
 
 }

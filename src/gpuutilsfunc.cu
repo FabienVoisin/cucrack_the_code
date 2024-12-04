@@ -1,6 +1,8 @@
 /*This file provides all the information data into constant, pinned memory and GPU memory*/
 #include <iostream>
 #include "common.cuh"
+__constant__  unsigned int codetocrack1[CODESIZE]; //2 is for 2 players
+__constant__  unsigned int codetocrack2[CODESIZE];
 
 __host__ void copy_to_constant_gpu_memory(unsigned int *hostcodedevice,unsigned int *devicememory,size_t offset){
     /* a reminder that the constant memory is read only and 64kB wide.
