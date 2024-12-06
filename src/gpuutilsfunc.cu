@@ -35,5 +35,52 @@ __host__ unsigned int* allocate_device_memory(unsigned int numelements){
     return devicedata;
 }
 
+__host__ void codecheck(unsigned int *playercode,unsigned int *constcode){
+    unsigned int blockspergrid=CODESIZE/THREADSPERBLOCK+1;
+    unsigned int *devicecheck; //pointer to device hot encoding must return the index of invalid
+    unsigned int *devicecode;
+    unsigned int host_incorrect_numbers=0;
+    unsigned int *device_incorrect_numbers;
+    unsigned int *device_incorrect_array;
+    
+    devicecheck=allocate_device_memory(CODESIZE);
+    devicecode=allocate_device_memory(CODESIZE);
+    device_incorrect_numbers=allocate_device_memory(sizeof(unsigned int));
+    copy_input_to_device(playercode,devicecode,CODESIZE);
+    copy_input_to_device(&host_incorrect_numbers,device_incorrect_numbers,CODESIZE,sizeof(unsigned int));
+    /*Now we need to create a new array tp store non zero values*/
+    gpu_device_check<<<blockspergrid,THREADSPERBLOCK>>>(devicecode,constcode,devicecheck,incorrectnumbers,CODESIZE);
+    copy_device_to_output(device_incorrect_numbers,&host_incorrect_numbers,sizeof(int));
+    device_incorrect_array=allocate_device_memory(host_incorrect_numbers);
+    //I somehow need to push the zeros to the side so I can later use to resuce the array
 
 
+    
+}
+
+/*What do I need to do?
+First I need to make sure that we compare the playercode to the constcode
+FOr every incorrect value, we need to store the key so that we can then copy the indices to modify*/
+/*Another function will be used to swap indices
+I can then output the number of elements that has incorrect (non-zero) values */
+__global__ void gpudevicecheck(unsigned int *devicecode, unsigned int *constcode, unsigned int *devicecheck, unsigned int *incorrectnumber,int numelements){
+    int blockId=blockIdx.z*(gridDim.x*gridDim.y)+blockIdx.y*(gridDim.x)+blockIdx.x;
+    int index=blockId*(blockDim.x*blockDim.y*blockDim.z)+threadIdx.z*(blockDim.x*blockDim.y)+threadIdx.y*(blockDim.y)+threadIdx.x;
+
+    __shared__ unsigned int incorrectnumbers;
+    if (index<numelements){
+        devicecheck[index]=(devicecode[index]!=constcode[index])*index;
+    }
+    get_number_of_incorrect_values(devicecheck,index,&incorrectnumbers);
+    
+
+}
+__device__ void get_number_of_incorrect_values(unsigned int *devicecheck, int index,unsigned int *incorrectvalue){
+    if (devicecheck[index] != 0){
+        atomicAdd(&incorrectvalue,1);
+    }
+}
+
+__global__ void cusortarraybubble(){
+
+}

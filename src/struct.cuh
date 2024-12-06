@@ -13,8 +13,8 @@ class player
         int gpuindex;
         std::vector<unsigned int> unused_values;
         unsigned int hostcode[CODESIZE];
-        
-        size_t *flagcorrect; // check the value in the index is correct 1 if yes 0 if not
+        unsigned int currentcodeattempt[CODESIZE];
+        size_t *flagincorrect; // check the value in the index is correct 1 if yes 0 if not
         size_t *flagswap; // check if the value needs to be swapped
 
         void playergencodetocrack(){
