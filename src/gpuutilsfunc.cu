@@ -53,7 +53,7 @@ __host__ void codecheck(unsigned int *playercode,unsigned int *constcode){
     copy_device_to_output(device_incorrect_numbers,&host_incorrect_numbers,sizeof(int));
     device_incorrect_array=allocate_device_memory(host_incorrect_numbers);
     //I somehow need to push the zeros to the side so I can later use to resuce the array
-
+    incorrect_num_threads=max(host_incorrect_numbers,32); //32 being the adequate number of threads
 
     
 }
@@ -63,24 +63,51 @@ First I need to make sure that we compare the playercode to the constcode
 FOr every incorrect value, we need to store the key so that we can then copy the indices to modify*/
 /*Another function will be used to swap indices
 I can then output the number of elements that has incorrect (non-zero) values */
-__global__ void gpudevicecheck(unsigned int *devicecode, unsigned int *constcode, unsigned int *devicecheck, unsigned int *incorrectnumber,int numelements){
+__global__ void gpudevicecheckincorrect(unsigned int *devicecode, unsigned int *constcode, unsigned int *devicecheck, unsigned int *incorrectnumber,int numelements){
     int blockId=blockIdx.z*(gridDim.x*gridDim.y)+blockIdx.y*(gridDim.x)+blockIdx.x;
     int index=blockId*(blockDim.x*blockDim.y*blockDim.z)+threadIdx.z*(blockDim.x*blockDim.y)+threadIdx.y*(blockDim.y)+threadIdx.x;
 
     __shared__ unsigned int incorrectnumbers;
     if (index<numelements){
         devicecheck[index]=(devicecode[index]!=constcode[index])*index;
+        get_key_number_values(devicecheck,index,&incorrectnumbers);
     }
-    get_number_of_incorrect_values(devicecheck,index,&incorrectnumbers);
+    
     
 
 }
-__device__ void get_number_of_incorrect_values(unsigned int *devicecheck, int index,unsigned int *incorrectvalue){
+__device__ void get_key_number_values(unsigned int *devicecheck, int index,unsigned int *incorrectvalue){
     if (devicecheck[index] != 0){
         atomicAdd(&incorrectvalue,1);
     }
 }
 
-__global__ void cusortarraybubble(){
+__global__ void place_incorrect_swap_values(unsigned int *devicecheck,unsigned int *device_incorrect_array, int numelements, unsigned int numthreads){
+    int blockId=blockIdx.z*(gridDim.x*gridDim.y)+blockIdx.y*(gridDim.x)+blockIdx.x;
+    int startindex=blockId*(blockDim.x*blockDim.y*blockDim.z)+threadIdx.z*(blockDim.x*blockDim.y)+threadIdx.y*(blockDim.y)+threadIdx.x;
+    int index=startindex;
+    //I need to incremenent by the number of threads which should equal the number of incorrect array.
+    while (devicecheck[index]=0 && index < numelements){
+         index +=numthreads; //increment by the number of threads
+    }
+    device_incorrect_array[startindex]=devicecheck[index];
+    __syncthreads;
+}
+
+__global__ void gpudevicecheckincorrect(unsigned int *devicecode, unsigned int *constcode, unsigned int *deviceswapcheck, unsigned int *incorrectswapnumber,int numelements){
+    int blockId=blockIdx.z*(gridDim.x*gridDim.y)+blockIdx.y*(gridDim.x)+blockIdx.x;
+    int index=blockId*(blockDim.x*blockDim.y*blockDim.z)+threadIdx.z*(blockDim.x*blockDim.y)+threadIdx.y*(blockDim.y)+threadIdx.x;
+
+    if (index<numelements){
+        unsigned int temp=0; 
+        unsigned int pasttemp=0;
+        for (int i=0){
+            temp=pasttemp+(devicecode[index]==constcode[i])*index;
+            pasttemp=temp;
+        }
+         deviceswapcheck[index]=temp;
+        get_key_number_values(deviceswapcheck,index,&incorrectswapnumbers);
+    }
 
 }
+
