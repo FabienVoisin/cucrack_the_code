@@ -27,9 +27,9 @@ int main(){
     std::cout<<"Now for player 2" << std::endl;
     //printcode(player2);
     /* Now we need to copy the data to symbol*/
-    //copy_to_constant_gpu_memory(player2.hostcode,codetocrack1,0);
+    copy_to_constant_gpu_memory(player2.hostcode,codetocrack1,0);
     
-    //copy_to_constant_gpu_memory(player1.hostcode,codetocrack2,0);
+    copy_to_constant_gpu_memory(player1.hostcode,codetocrack2,0);
     runtestkernel(player1.hostcode,player2.hostcode);
     // We then need to perform a simple operation
 
