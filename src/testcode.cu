@@ -8,7 +8,7 @@ __constant__  unsigned int codetocrack2[CODESIZE];
 
 void printcode(player &player){
     
-    for (int i =0;i <CODESIZE; i++){
+    for (int i =0;i<CODESIZE; i++){
         std::cout<<player.hostcode[i]<<",";
     }
     
