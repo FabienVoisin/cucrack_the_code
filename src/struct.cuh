@@ -2,7 +2,8 @@
 #include <vector>
 #include "common.cuh"
 
-
+#ifndef STRUCT_H
+#define STRUCT_H
 class player
 {        
 
@@ -13,14 +14,17 @@ class player
         int gpuindex;
         std::vector<unsigned int> unused_values;
         unsigned int hostcode[CODESIZE];
-        
-        size_t *flagcorrect; // check the value in the index is correct 1 if yes 0 if not
-        size_t *flagswap; // check if the value needs to be swapped
+        unsigned int currentcodeattempt[CODESIZE];
+        unsigned int flagincorrectnumber=0;
+        unsigned int  flagswapnumber=0;
+        unsigned int *flagincorrect; // check the value in the index is correct 1 if yes 0 if not
+        unsigned int *flagswap; // check if the value needs to be swapped
+        unsigned int *constantmemory; // Pointer to constant memory
 
-        void playergencodetocrack(){
+        void playergencodetocrack(int seed){
             /*The goal here is to generate a random set of number of size codesize
             The code number MUST BE a unique set of number*/
-            srand(time(NULL));
+            srand(seed);
             std::vector<int> tempvector(ARRAYSIZE);
             //we first need to set up a temparray to set all values possible, each value in the code needs to be unique
             for(int i=0; i<ARRAYSIZE; i++){
@@ -34,12 +38,12 @@ class player
             } 
 
         } // This will need to be updated to main
-        player():
+        player(int seed):
         unused_values{std::vector<unsigned int>(ARRAYSIZE,0)}{
             for (int i = 0 ; i<ARRAYSIZE; i++){
                 unused_values[i]=i; // give the vector all the available values
             }
-        playergencodetocrack(); //fill up the hostcode that will be needed to be sent to the stream player 2
+        playergencodetocrack(seed); //fill up the hostcode that will be needed to be sent to the stream player 2
 
         }     
          
@@ -54,3 +58,4 @@ class player
         }   
         
 };
+#endif
