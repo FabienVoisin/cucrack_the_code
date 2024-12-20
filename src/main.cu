@@ -36,7 +36,7 @@ int main(){
 
     devicevalue=allocate_device_memory(1);
     //testval<<<8,32>>>(player1.constantmemory,player2.constantmemory,devicevalue);
-    copy_device_to_output(devicevalue,&hostvalue,1);
+    copy_device_to_output<unsigned int>(devicevalue,&hostvalue,1);
     //std::cout<<"val is "<<hostvalue<<std::endl;
     getcodeattempt(player1);
     codecheck(player1);
