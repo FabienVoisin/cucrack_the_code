@@ -35,9 +35,29 @@ int main(){
     unsigned int hostvalue;
 
     devicevalue=allocate_device_memory(1);
-    testval<<<8,32>>>(player1.constantmemory,player2.constantmemory,devicevalue);
+    //testval<<<8,32>>>(player1.constantmemory,player2.constantmemory,devicevalue);
     copy_device_to_output(devicevalue,&hostvalue,1);
-    std::cout<<"val is "<<hostvalue<<std::endl;
+    //std::cout<<"val is "<<hostvalue<<std::endl;
+    getcodeattempt(player1);
+    codecheck(player1);
     //runtestkernel(player1.hostcode,player2.hos1tcode);
     // We then need to perform a simple operation
+    std::cout<<"player generated code:"<<std::endl;
+    for (int i=0; i<CODESIZE;i++){
+    std::cout<<player1.currentcodeattempt[i]<<",";
+    }
+    std::cout<<std::endl;
+
+    std::cout<<"player incorrect indices"<<std::endl;
+    std::cout<<"player incorrect numbers: "<< player1.flagincorrectnumber<<std::endl;
+    for (int i=0; i<player1.flagincorrectnumber;i++){
+        std::cout<<player1.flagincorrect[i]<<",";
+        }
+
+    std::cout<<"player swap indices"<<std::endl;
+    std::cout<<"player swap numbers: "<< player1.flagswapnumber<<std::endl;
+    for (int i=0; i<player1.flagswapnumber;i++){
+        std::cout<<player1.flagswap[i]<<",";
+        }
+
 }

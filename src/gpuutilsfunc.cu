@@ -65,9 +65,9 @@ __host__ unsigned int* allocate_device_memory(unsigned int numelements){
 }
 
 
-__host__ void codecheck(player &player,unsigned int *constcode){
-    get_incorrect_array(player, constcode);
-    get_swap_array(player, constcode);
+__host__ void codecheck(player &player){
+    get_incorrect_array(player);
+    get_swap_array(player);
 
 
     /* I need to free all pointers and CUDA variables*/
@@ -75,7 +75,7 @@ __host__ void codecheck(player &player,unsigned int *constcode){
 }
 
 
-__host__ void get_incorrect_array(player &player,unsigned int *constcode){
+__host__ void get_incorrect_array(player &player){
     unsigned int blockspergrid=CODESIZE/THREADSPERBLOCK+1;
     unsigned int *devicecode;
     unsigned int *device_incorrect_number;
@@ -87,23 +87,22 @@ __host__ void get_incorrect_array(player &player,unsigned int *constcode){
     devicecode=allocate_device_memory(CODESIZE);
     device_incorrect_number=allocate_device_memory(sizeof(unsigned int));
     copy_input_to_device(player.currentcodeattempt,devicecode,CODESIZE);
-    copy_input_to_device(&player.flagincorrectnumber,device_incorrect_number,sizeof(unsigned int));
+    copy_input_to_device(&player.flagincorrectnumber,device_incorrect_number,1);
     
-    gpudevicecheckincorrect<<<blockspergrid,THREADSPERBLOCK>>>(devicecode,constcode,devicecheck,device_incorrect_number,CODESIZE);
-    copy_device_to_output(device_incorrect_number,&player.flagincorrectnumber,sizeof(unsigned int));
+    gpudevicecheckincorrect<<<blockspergrid,THREADSPERBLOCK>>>(devicecode,player.constantmemory,devicecheck,device_incorrect_number,CODESIZE);
+    copy_device_to_output(device_incorrect_number,&player.flagincorrectnumber,1);
     device_incorrect_array=allocate_device_memory(player.flagincorrectnumber);
 
     int incorrect_num_threads=max(player.flagincorrectnumber,32);
     int incorrect_num_blocks=player.flagincorrectnumber/incorrect_num_threads + 1 ; 
     int total_num_threads=incorrect_num_threads*incorrect_num_blocks;
-
     place_incorrect_swap_values<<<incorrect_num_blocks,incorrect_num_threads>>>(devicecheck,device_incorrect_array, device_incorrect_number, total_num_threads);
     /*Place the data back into the player values*/
     /*I will need to free these values before reinitialize them*/
-    copy_device_to_output(device_incorrect_number,&player.flagincorrectnumber,sizeof(unsigned int));
+    copy_device_to_output(device_incorrect_number,&player.flagincorrectnumber,1);
     player.flagincorrect=new unsigned int[player.flagincorrectnumber];
       
-    copy_device_to_output(device_incorrect_array,player.flagincorrect,player.flagincorrectnumber*sizeof(unsigned int));    
+    copy_device_to_output(device_incorrect_array,player.flagincorrect,player.flagincorrectnumber);    
     cudaFree(devicecheck);
     cudaFree(device_incorrect_number);
     cudaFree(device_incorrect_array);
@@ -113,7 +112,7 @@ __host__ void get_incorrect_array(player &player,unsigned int *constcode){
 
 }
 
-__host__ void get_swap_array(player &player,unsigned int *constcode){
+__host__ void get_swap_array(player &player){
     unsigned int blockspergrid=CODESIZE/THREADSPERBLOCK+1;
     unsigned int *devicecode;
     unsigned int *devicecheck;
@@ -125,19 +124,21 @@ __host__ void get_swap_array(player &player,unsigned int *constcode){
     devicecode=allocate_device_memory(CODESIZE);
     device_swapable_number=allocate_device_memory(sizeof(unsigned int));
     copy_input_to_device(player.currentcodeattempt,devicecode,CODESIZE);
-    copy_input_to_device(&player.flagswapnumber,device_swapable_number,sizeof(unsigned int));
+    copy_input_to_device(&player.flagswapnumber,device_swapable_number,1);
 
-    gpudevicecheckswap<<<blockspergrid,THREADSPERBLOCK>>>(devicecode,constcode,devicecheck,device_swapable_number,CODESIZE);
-    copy_device_to_output(device_swapable_number,&player.flagswapnumber,sizeof(unsigned int));    
+    gpudevicecheckswap<<<blockspergrid,THREADSPERBLOCK>>>(devicecode,player.constantmemory,devicecheck,device_swapable_number,CODESIZE);
+    copy_device_to_output(device_swapable_number,&player.flagswapnumber,1);    
     device_swapable_array=allocate_device_memory(player.flagswapnumber);
     
     int swap_num_threads=max(player.flagswapnumber,32); //32 being the adequate number of threads
     int swap_num_blocks=player.flagswapnumber/swap_num_threads + 1 ; 
+    std::cout<<"num blocks: "<< swap_num_blocks<<std::endl;
     int total_num_threads=swap_num_threads*swap_num_blocks;
+
 
     place_incorrect_swap_values<<<swap_num_blocks,swap_num_threads>>>(devicecheck,device_swapable_array,device_swapable_number,total_num_threads);
     player.flagswap=new unsigned int[player.flagswapnumber];
-    copy_device_to_output(device_swapable_array,player.flagswap,host_swapable_number*sizeof(unsigned int));
+    copy_device_to_output(device_swapable_array,player.flagswap,player.flagswapnumber);
 
     cudaFree(devicecode);
     cudaFree(devicecheck);
@@ -154,14 +155,16 @@ __global__ void gpudevicecheckincorrect(unsigned int *devicecode, unsigned int *
     int blockId=blockIdx.z*(gridDim.x*gridDim.y)+blockIdx.y*(gridDim.x)+blockIdx.x;
     int index=blockId*(blockDim.x*blockDim.y*blockDim.z)+threadIdx.z*(blockDim.x*blockDim.y)+threadIdx.y*(blockDim.y)+threadIdx.x;
 
-    __shared__ unsigned int incorrectnumbers;
+    __global__ unsigned int incorrectnumbers;
+    //printf("%u ",devicecheck[index]);
     if (index<numelements){
         devicecheck[index]=(devicecode[index]!=constcode[index])*index;
-        get_key_number_values(devicecheck,index,&incorrectnumbers);
+        
+        get_key_number_values(devicecheck,index,incorrectnumber);
     }
+    __syncthreads;
+    //*incorrectnumber=incorrectnumbers;
     
-    
-
 }
 __device__ void get_key_number_values(unsigned int *devicecheck, int index,unsigned int *incorrectvalue){
     if (devicecheck[index] != 0){
@@ -175,8 +178,9 @@ __global__ void place_incorrect_swap_values(unsigned int *devicecheck,unsigned i
     int startindex=blockId*(blockDim.x*blockDim.y*blockDim.z)+threadIdx.z*(blockDim.x*blockDim.y)+threadIdx.y*(blockDim.y)+threadIdx.x;
     unsigned int index=startindex;
     //I need to incremenent by the number of threads which should equal the number of incorrect array.
-    while (devicecheck[index]=0 && index < *numelements){
+    while (devicecheck[index]==0 && startindex < *numelements && index < CODESIZE){
          index +=numthreads; //increment by the number of threads
+         //printf("%u ",devicecheck[index]);
     }
     device_incorrect_array[startindex]=devicecheck[index];
     __syncthreads;
@@ -202,8 +206,10 @@ __global__ void gpudevicecheckswap(unsigned int *devicecode, unsigned int *const
 
 __host__ void getcodeattempt(player &player){
 /*This will generate a code attempt...Ideally this is done on the CPU stream whilst the other player do their attempt*/
-    if (&player.flagincorrect ==NULL && &player.flagswap ==NULL){
+    std::cout<<"another test"<<std::endl;
+    if (player.flagincorrectnumber ==0 && player.flagswapnumber ==0){
         for (int i=0;i<CODESIZE;i++){
+            
             int key=rand()%player.unused_values.size();
             player.currentcodeattempt[i]=player.unused_values[key];
             player.unused_values.erase(player.unused_values.begin()+key);
