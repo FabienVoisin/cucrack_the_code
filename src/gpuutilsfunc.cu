@@ -41,17 +41,17 @@ __host__  void copy_to_constant_gpu_memory(player &player,int playernumber){
         std::cout<<"test"<<std::endl;
     //We must make sure that if we end up with one GPU only, the offset gets propagated
 }
-
-__host__ void copy_input_to_device(unsigned int *hostdata, unsigned int *devicedata, unsigned int numelements){
+template <typename T>
+__host__ void copy_input_to_device(T *hostdata, T *devicedata, T numelements){
     cudaError_t error;
-    size_t size=numelements*sizeof(unsigned int);
+    size_t size=numelements*sizeof(T);
     error=cudaMemcpy(devicedata,hostdata,size,cudaMemcpyHostToDevice);
 
 }
-
-__host__ void copy_device_to_output(unsigned int *devicedata, unsigned int *hostdata, unsigned int numelements){
+template <typename T>
+__host__ void copy_device_to_output(T *devicedata, T *hostdata, T numelements){
     cudaError_t error;
-    size_t size=numelements*sizeof(unsigned int);
+    size_t size=numelements*sizeof(T);
     error=cudaMemcpy(hostdata,devicedata,size,cudaMemcpyDeviceToHost);
 }
 
@@ -86,11 +86,11 @@ __host__ void get_incorrect_array(player &player){
     devicecheck=allocate_device_memory(CODESIZE);
     devicecode=allocate_device_memory(CODESIZE);
     device_incorrect_number=allocate_device_memory(sizeof(unsigned int));
-    copy_input_to_device(player.currentcodeattempt,devicecode,CODESIZE);
-    copy_input_to_device(&player.flagincorrectnumber,device_incorrect_number,1);
+    copy_input_to_device<unsigned int>(player.currentcodeattempt,devicecode,CODESIZE);
+    copy_input_to_device<unsigned int>(&player.flagincorrectnumber,device_incorrect_number,1);
     
     gpudevicecheckincorrect<<<blockspergrid,THREADSPERBLOCK>>>(devicecode,player.constantmemory,devicecheck,device_incorrect_number,CODESIZE);
-    copy_device_to_output(device_incorrect_number,&player.flagincorrectnumber,1);
+    copy_device_to_output<unsigned int>(device_incorrect_number,&player.flagincorrectnumber,1);
     device_incorrect_array=allocate_device_memory(player.flagincorrectnumber);
 
     int incorrect_num_threads=max(player.flagincorrectnumber,32);
@@ -99,10 +99,10 @@ __host__ void get_incorrect_array(player &player){
     place_incorrect_swap_values<<<incorrect_num_blocks,incorrect_num_threads>>>(devicecheck,device_incorrect_array, device_incorrect_number, total_num_threads);
     /*Place the data back into the player values*/
     /*I will need to free these values before reinitialize them*/
-    copy_device_to_output(device_incorrect_number,&player.flagincorrectnumber,1);
+    copy_device_to_output<unsigned int>(device_incorrect_number,&player.flagincorrectnumber,1);
     player.flagincorrect=new unsigned int[player.flagincorrectnumber];
       
-    copy_device_to_output(device_incorrect_array,player.flagincorrect,player.flagincorrectnumber);    
+    copy_device_to_output<unsigned int>(device_incorrect_array,player.flagincorrect,player.flagincorrectnumber);    
     cudaFree(devicecheck);
     cudaFree(device_incorrect_number);
     cudaFree(device_incorrect_array);
@@ -123,11 +123,11 @@ __host__ void get_swap_array(player &player){
     devicecheck=allocate_device_memory(CODESIZE);
     devicecode=allocate_device_memory(CODESIZE);
     device_swapable_number=allocate_device_memory(sizeof(unsigned int));
-    copy_input_to_device(player.currentcodeattempt,devicecode,CODESIZE);
-    copy_input_to_device(&player.flagswapnumber,device_swapable_number,1);
+    copy_input_to_device<unsigned int>(player.currentcodeattempt,devicecode,CODESIZE);
+    copy_input_to_device<unsigned int>(&player.flagswapnumber,device_swapable_number,1);
 
     gpudevicecheckswap<<<blockspergrid,THREADSPERBLOCK>>>(devicecode,player.constantmemory,devicecheck,device_swapable_number,CODESIZE);
-    copy_device_to_output(device_swapable_number,&player.flagswapnumber,1);    
+    copy_device_to_output<unsigned int>(device_swapable_number,&player.flagswapnumber,1);    
     device_swapable_array=allocate_device_memory(player.flagswapnumber);
     
     int swap_num_threads=max(player.flagswapnumber,32); //32 being the adequate number of threads
@@ -138,7 +138,7 @@ __host__ void get_swap_array(player &player){
 
     place_incorrect_swap_values<<<swap_num_blocks,swap_num_threads>>>(devicecheck,device_swapable_array,device_swapable_number,total_num_threads);
     player.flagswap=new unsigned int[player.flagswapnumber];
-    copy_device_to_output(device_swapable_array,player.flagswap,player.flagswapnumber);
+    copy_device_to_output<unsigned int>(device_swapable_array,player.flagswap,player.flagswapnumber);
 
     cudaFree(devicecode);
     cudaFree(devicecheck);

@@ -26,14 +26,14 @@ __host__ void runtestkernel(unsigned int *playercode1,unsigned int *playercode2)
     err=cudaMemcpyToSymbol(codetocrack2,playercode2,size);
     //std::cout<<"hello world"<<std::endl;
     testkernel1<<<blockspergrid,THREADSPERBLOCK>>>(deviceresult);
-    copy_device_to_output(deviceresult,hostresult,CODESIZE);
+    copy_device_to_output<unsigned int>(deviceresult,hostresult,CODESIZE);
     for (int i=0;i<CODESIZE;i++){
         std::cout<<hostresult[i]<<","<<playercode1[i]<<std::endl;
     }
     std::cout<<std::endl;
     std::cout<<"kernel 2" <<std::endl;
     testkernel2<<<blockspergrid,THREADSPERBLOCK>>>(deviceresult);
-    copy_device_to_output(deviceresult,hostresult,CODESIZE);
+    copy_device_to_output<unsigned int>(deviceresult,hostresult,CODESIZE);
     for (int i=0;i<CODESIZE;i++){
         std::cout<<hostresult[i]<<","<<playercode2[i]<<std::endl;
     }

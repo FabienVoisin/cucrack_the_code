@@ -2,8 +2,8 @@
 #include "struct.cuh"
 __global__ void testval(unsigned int *constantmemory1,unsigned int *constantmemory2, unsigned int *devicevalue);
 __host__ void copy_to_constant_gpu_memory(player &player,int playernumber);
-__host__ void copy_input_to_device(unsigned int *hostdata, unsigned int *devicedata, unsigned int numelements);
-__host__ void copy_device_to_output(unsigned int *devicedata, unsigned int *hostdata, unsigned int numelements);
+template <typename T> __host__ void copy_input_to_device(T *hostdata, T *devicedata, T numelements);
+template <typename T> __host__ void copy_device_to_output(T *devicedata,T *hostdata, T numelements);
 __host__ unsigned int* allocate_device_memory(unsigned int numelements);
 __host__ void codecheck(player &player);
 __host__ void get_incorrect_array(player &player);
