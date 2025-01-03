@@ -1,2 +1,4 @@
 #Test output files
 output.txt
+*.o
+test

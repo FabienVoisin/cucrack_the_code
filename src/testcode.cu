@@ -20,7 +20,7 @@ __host__ void runtestkernel(unsigned int *playercode1,unsigned int *playercode2)
     unsigned int blockspergrid=CODESIZE/THREADSPERBLOCK+1; //define the number
     unsigned int hostresult[CODESIZE];
     unsigned int *deviceresult;
-    deviceresult=allocate_device_memory(CODESIZE);
+    deviceresult=allocate_device_memory<unsigned int>(CODESIZE);
     size_t size=CODESIZE*sizeof(unsigned int);
     cudaError_t err=cudaMemcpyToSymbol(codetocrack1,playercode1,size);
     err=cudaMemcpyToSymbol(codetocrack2,playercode2,size);
